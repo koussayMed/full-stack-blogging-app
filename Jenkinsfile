@@ -1,13 +1,5 @@
 pipeline {
     agent any
-    tools {
-        jdk "jdk"
-        maven "maven"
-    }
-    environment {
-        SCANNER_HOME = tool 'sonar-scanner'
-    }
-    
     stages {
         stage('Git Checkout') {
             steps {
@@ -24,14 +16,7 @@ pipeline {
                 sh "trivy fs . --format table -o fs.html"
             }
         }
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonarqubeServer') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Blogging-app -Dsonar.projectKey=Blogging-app \
-                          -Dsonar.java.binaries=target'''
-                }
-            }
-        }
+       
         stage('Build') {
             steps {
                 sh "mvn package"
@@ -47,43 +32,28 @@ pipeline {
         stage('Docker Build & Tag') {
             steps {
                 script{
-                withDockerRegistry(credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/') {
-                sh "docker build -t ugogabriel/gab-blogging-app ."
+                withDockerRegistry(credentialsId: 'docker', url: 'https://index.docker.io/v1/') {
+                sh "docker build -t koussayfattoum480432/gab-blogging-app ."
                 }
                 }
             }
         }
         stage('Trivy Image Scan') {
             steps {
-                sh "trivy image --format table -o image.html ugogabriel/gab-blogging-app:latest"
+                sh "trivy image --format table -o image.html koussayfattoum480432/gab-blogging-app:latest"
             }
         }
         stage('Docker Push Image') {
             steps {
                 script{
-                withDockerRegistry(credentialsId: 'dockerhub-cred', url: 'https://index.docker.io/v1/') {
-                    sh "docker push ugogabriel/gab-blogging-app"
+                withDockerRegistry(credentialsId: 'docker', url: 'https://index.docker.io/v1/') {
+                    sh "docker push koussayfattoum480432/gab-blogging-app"
                 }
                 }
             }
         }
-        stage('K8s Deploy') {
-            steps {
-               withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: ' devopsshack-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'webapps', serverUrl: 'https://AD1D9143EC6B3C8A72B36759FA28854D.gr7.eu-west-2.eks.amazonaws.com']]) {
-                    sh "kubectl apply -f deployment-service.yml"
-                    sleep 20
-                }
-            }
-        }
-        stage('Verify Deployment') {
-            steps {
-               withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: ' devopsshack-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'webapps', serverUrl: 'https://AD1D9143EC6B3C8A72B36759FA28854D.gr7.eu-west-2.eks.amazonaws.com']]) {
-                    sh "kubectl get pods"
-                    sh "kubectl get service"
-                }
-            }
-        }
-        
+       
+      
     }  // Closing stages
 }  // Closing pipeline
 post {
