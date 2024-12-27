@@ -40,7 +40,7 @@ pipeline {
        
       
     }  // Closing stages
-}  // Closing pipeline
+  // Closing pipeline
 post {
     always {
         script {
@@ -78,5 +78,6 @@ post {
             )
         }
     }
+}
 }
 
