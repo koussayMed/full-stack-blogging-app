@@ -6,29 +6,14 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/koussayMed/full-stack-blogging-app.git'
             }
         }
-        stage('Compile') {
-            steps {
-                sh "mvn compile"
-            }
-        }
+        
         stage('Trivy FS') {
             steps {
                 sh "trivy fs . --format table -o fs.html"
             }
         }
        
-        stage('Build') {
-            steps {
-                sh "mvn package"
-            }
-        }
-        stage('Publish Artifacts') {
-            steps {
-                withMaven(globalMavenSettingsConfig: 'maven-settings', jdk: 'jdk', maven: 'maven', mavenSettingsConfig: '', traceability: true) {
-                        sh "mvn deploy"
-                }
-            }
-        }
+        
         stage('Docker Build & Tag') {
             steps {
                 script{
